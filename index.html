@@ -1,0 +1,719 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#F6B8D2">
+<title>for cookiee 💕</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@500;700&family=Fredoka:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --cream:#FFF6F5;
+    --blush:#FFE1EC;
+    --rose:#E85D8A;
+    --rose-deep:#C43F6B;
+    --plum:#5B2A43;
+    --gold:#FFD98E;
+    --paper:#FFFDFB;
+  }
+
+  *{ box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+
+  html,body{
+    margin:0; padding:0; width:100%; height:100%;
+    overflow:hidden;
+    background:linear-gradient(160deg,var(--cream),var(--blush));
+    font-family:'Fredoka',sans-serif;
+    color:var(--plum);
+    -webkit-user-select:none; user-select:none;
+    -webkit-touch-callout:none;
+  }
+
+  .stage{ position:fixed; inset:0; touch-action:none; overflow:hidden; }
+
+  /* ---- hidden notes ---- */
+  .notes-layer{ position:absolute; inset:0; z-index:1; }
+  .memory-layer{ position:absolute; inset:0; z-index:1; pointer-events:none; }
+  .memory-card{
+    position:absolute; top:var(--top); left:var(--left);
+    width:clamp(120px,16vw,190px); padding:8px 8px 12px;
+    transform:translate(-50%,-50%) rotate(var(--rot));
+    background:var(--paper); border-radius:8px;
+    box-shadow:0 8px 20px rgba(91,42,67,.18);
+    animation:memoryFloat var(--float-duration, 9s) ease-in-out infinite;
+    animation-delay:var(--delay, 0s);
+    transition:filter .45s ease, box-shadow .45s ease;
+    will-change:transform;
+    cursor:grab;
+    pointer-events:none;
+    touch-action:none;
+  }
+  .memory-card.dragging{
+    animation-play-state:paused;
+    cursor:grabbing;
+    filter:brightness(1.04);
+    box-shadow:0 18px 34px rgba(91,42,67,.28);
+    transition:none;
+  }
+  .memory-card:hover{
+    filter:brightness(1.03);
+    box-shadow:0 14px 28px rgba(91,42,67,.25);
+  }
+  @keyframes memoryFloat{
+    0%,100%{ transform:translate(-50%,-50%) rotate(var(--rot)); }
+    50%{ transform:translate(-50%,calc(-50% - 10px)) rotate(calc(var(--rot) + 1.5deg)); }
+  }
+  .memory-card img{
+    display:block; width:100%; aspect-ratio:4 / 3; object-fit:cover;
+    border-radius:4px;
+    filter:blur(10px) saturate(.82);
+    transform:scale(1.05);
+    transition:filter .6s ease, transform .6s ease;
+  }
+  .memory-card.revealed img{
+    filter:none !important;
+    transform:scale(1) !important;
+  }
+  .memory-card span{
+    display:block; margin-top:7px; text-align:center;
+    font-family:'Caveat',cursive; font-size:1.1rem; font-weight:700;
+    color:var(--rose-deep);
+    opacity:0; transform:translateY(6px);
+    transition:opacity .45s ease, transform .45s ease;
+  }
+  .memory-card.revealed span{
+    opacity:1; transform:translateY(0);
+  }
+  .note{
+    position:absolute;
+    top:var(--top); left:var(--left);
+    transform:translate(-50%,-50%) rotate(var(--rot));
+    font-family:'Caveat',cursive; font-weight:700;
+    font-size:clamp(.7rem,2.2vw,1.15rem);
+    color:var(--rose-deep);
+    background:rgba(255,253,251,.62);
+    padding:.22em .6em;
+    border-radius:14px;
+    white-space:nowrap;
+    box-shadow:0 3px 12px rgba(196,63,107,.16);
+    animation:noteFloat var(--note-duration, 7s) ease-in-out infinite;
+    animation-delay:var(--note-delay, 0s);
+    will-change:transform;
+  }
+  @keyframes noteFloat{
+    0%,100%{ transform:translate(-50%,-50%) rotate(var(--rot)); }
+    50%{ transform:translate(-50%,calc(-50% - 7px)) rotate(calc(var(--rot) + 1deg)); }
+  }
+
+  /* ---- the fog itself ---- */
+  .fog-canvas{ position:absolute; inset:0; z-index:2; cursor:grab; touch-action:none; }
+  .fog-canvas:active{ cursor:grabbing; }
+
+  /* ---- ambient floating doodles above the fog ---- */
+  .ambient-layer{ position:absolute; inset:0; z-index:3; pointer-events:none; }
+  .floaty{ position:absolute; font-size:1.35rem; opacity:.55; animation:drift 8s ease-in-out infinite; }
+  @keyframes drift{
+    0%,100%{ transform:translateY(0) rotate(0deg); }
+    50%{ transform:translateY(-16px) rotate(9deg); }
+  }
+
+  .hint{
+    position:absolute; top:6%; left:50%; transform:translateX(-50%);
+    z-index:5; font-weight:500; font-size:.95rem;
+    color:var(--rose-deep); background:rgba(255,255,255,.72);
+    padding:.5em 1.1em; border-radius:999px;
+    transition:opacity .6s ease;
+    white-space:nowrap;
+  }
+  .hint.hidden{ opacity:0; pointer-events:none; }
+
+  .icon-btn{
+    position:absolute; z-index:6; border:none; touch-action:none;
+    background:rgba(255,255,255,.6);
+    width:46px; height:46px; border-radius:50%;
+    font-size:1.35rem; display:flex; align-items:center; justify-content:center;
+    cursor:pointer; box-shadow:0 3px 10px rgba(91,42,67,.12);
+  }
+  .icon-star{ top:5%; right:5%; }
+  .icon-bird{ bottom:9%; left:5%; }
+  .icon-note{ top:5%; left:5%; }
+  .icon-btn.pressed{ animation:wiggle .4s ease; }
+  @keyframes wiggle{
+    0%,100%{ transform:rotate(0); }
+    25%{ transform:rotate(-12deg); }
+    75%{ transform:rotate(12deg); }
+  }
+
+  .refog-btn{
+    position:absolute; z-index:6; bottom:5%; right:5%; touch-action:none;
+    border:none; background:var(--rose); color:#fff;
+    font-family:'Fredoka'; font-weight:500; font-size:.85rem;
+    padding:.65em 1.1em; border-radius:999px; cursor:pointer;
+    box-shadow:0 5px 16px rgba(232,93,138,.4);
+    white-space:nowrap;
+  }
+  .refog-btn:hover{ background:var(--rose-deep); }
+
+  .music-btn{
+    position:absolute; z-index:6; bottom:5%; left:50%;
+    transform:translateX(-50%); border:none; touch-action:none;
+    background:rgba(255,255,255,.78); color:var(--rose-deep);
+    font-family:'Fredoka'; font-weight:500; font-size:.85rem;
+    padding:.65em 1.1em; border-radius:999px; cursor:pointer;
+    box-shadow:0 5px 16px rgba(91,42,67,.14);
+    transition:background .25s ease, transform .25s ease;
+    white-space:nowrap;
+  }
+  .music-btn:hover{ background:#fff; transform:translateX(-50%) translateY(-2px); }
+
+  .toast{
+    position:fixed; top:12%; left:50%;
+    transform:translate(-50%,-16px);
+    z-index:20; background:var(--paper); color:var(--rose-deep);
+    font-family:'Caveat'; font-weight:700; font-size:1.7rem;
+    padding:.5em 1em; border-radius:16px; text-align:center;
+    box-shadow:0 10px 26px rgba(91,42,67,.2);
+    opacity:0; pointer-events:none;
+    transition:opacity .35s ease, transform .35s ease;
+    max-width:80vw;
+  }
+
+  .finale-overlay{
+    position:fixed; inset:0; z-index:30;
+    background:rgba(91,42,67,.35);
+    display:flex; align-items:center; justify-content:center;
+    opacity:0; pointer-events:none;
+    transition:opacity .4s ease;
+  }
+  .finale-overlay.show{ opacity:1; pointer-events:auto; }
+  .finale-card{
+    background:var(--paper); border-radius:26px;
+    padding:2.1em 1.8em; max-width:340px; text-align:center;
+    transform:scale(.85); transition:transform .4s ease;
+    box-shadow:0 24px 60px rgba(91,42,67,.32);
+  }
+  .finale-overlay.show .finale-card{ transform:scale(1); }
+  .finale-emoji{ font-size:2.1rem; }
+  .finale-text{
+    font-family:'Caveat'; font-weight:700; font-size:1.9rem;
+    color:var(--rose-deep); margin:.35em 0;
+  }
+  .finale-sub{ font-size:.92rem; opacity:.85; margin:0 0 .2em; }
+  .finale-close{
+    margin-top:1.1em; border:none; background:var(--rose); color:#fff;
+    padding:.55em 1.3em; border-radius:999px; cursor:pointer;
+    font-family:'Fredoka'; touch-action:none;
+  }
+
+  .signature{
+    position:fixed; bottom:1.4%; left:50%; transform:translateX(-50%);
+    z-index:5; font-family:'Caveat'; font-size:1rem;
+    color:var(--rose-deep); opacity:.7; pointer-events:none;
+  }
+
+  .heart-particle{
+    position:fixed; z-index:25; pointer-events:none; font-size:1.25rem;
+    animation:floatUp 1.15s ease-out forwards;
+  }
+  @keyframes floatUp{
+    0%{ transform:translate(0,0) scale(.6); opacity:1; }
+    100%{ transform:translate(var(--dx),-100px) scale(1.1); opacity:0; }
+  }
+
+  @media (prefers-reduced-motion:reduce){
+    .floaty{ animation:none; }
+    .memory-card{ animation:none; }
+    .note{ animation:none; }
+    .icon-btn.pressed{ animation:none; }
+  }
+</style>
+</head>
+<body>
+
+  <div class="stage" id="stage">
+
+    <div class="notes-layer" id="notesLayer">
+      <span class="note" style="--top:16%; --left:18%; --rot:-6deg; --note-delay:-1s;">cutuuuu 🥰</span>
+      <span class="note" style="--top:24%; --left:70%; --rot:5deg; --note-delay:-3s;">baby girl 💗</span>
+      <span class="note" style="--top:46%; --left:10%; --rot:-4deg; --note-delay:-5s;">princess 👑</span>
+      <span class="note" style="--top:60%; --left:78%; --rot:6deg; --note-delay:-2s;">angry bird 🐤💢</span>
+      <span class="note" style="--top:12%; --left:74%; --rot:3deg; --note-delay:-4s;">cookiee 🍪</span>
+      <span class="note" style="--top:40%; --left:44%; --rot:-3deg; --note-delay:-6s;">bachhuuu 🐣</span>
+      <span class="note" style="--top:72%; --left:42%; --rot:5deg; --note-delay:-7s;">zhanduu 🤭</span>
+      <span class="note" style="--top:86%; --left:58%; --rot:-5deg; --note-delay:-2.5s;">baby 👶</span>
+      <span class="note" style="--top:31%; --left:16%; --rot:4deg; --note-delay:-4.5s;">meri jaan 💌</span>
+      <span class="note" style="--top:78%; --left:18%; --rot:-7deg; --note-delay:-1.5s;">cutie pie 🌷</span>
+      <span class="note" style="--top:88%; --left:82%; --rot:4deg; --note-delay:-5.5s;">always yours 💞</span>
+    </div>
+
+    <div class="memory-layer" aria-label="hidden memory photos">
+      <figure class="memory-card" style="--top:16%; --left:24%; --rot:-7deg; --delay:-1s;">
+        <img src="Snapchat-697560203.jpg" alt="A sweet memory together" loading="lazy">
+        <span>my pretty girl 💗</span>
+      </figure>
+      <figure class="memory-card" style="--top:18%; --left:53%; --rot:4deg; --delay:-3s;">
+        <img src="Snapchat-505349876.jpg" alt="A happy shared moment" loading="lazy">
+        <span>that smile, meri jaan 🥰</span>
+      </figure>
+      <figure class="memory-card" style="--top:27%; --left:83%; --rot:6deg; --delay:-5s;">
+        <img src="Snapchat-352838049.jpg" alt="A cherished personal memory" loading="lazy">
+        <span>cutuuuu forever 🌸</span>
+      </figure>
+      <figure class="memory-card" style="--top:42%; --left:14%; --rot:-4deg; --delay:-2s;">
+        <img src="IMG_20240402_184050.jpg" alt="A favorite memory" loading="lazy">
+        <span>my little sunshine ☀️</span>
+      </figure>
+      <figure class="memory-card" style="--top:40%; --left:46%; --rot:-3deg; --delay:-6s;">
+        <img src="IMG-20240414-WA0065.jpg" alt="A warm memory together" loading="lazy">
+        <span>bachhuuu 🐣</span>
+      </figure>
+      <figure class="memory-card" style="--top:45%; --left:78%; --rot:5deg; --delay:-4s;">
+        <img src="IMG-20240414-WA0064.jpg" alt="A lovely memory together" loading="lazy">
+        <span>you are my favorite 💌</span>
+      </figure>
+      <figure class="memory-card" style="--top:66%; --left:25%; --rot:5deg; --delay:-7s;">
+        <img src="IMG-20240414-WA0059.jpg" alt="A favorite day together" loading="lazy">
+        <span>hold my hand always 🤝</span>
+      </figure>
+      <figure class="memory-card" style="--top:65%; --left:57%; --rot:-5deg; --delay:-2.5s;">
+        <img src="IMG-20240407-WA0076.jpg" alt="A beautiful shared memory" loading="lazy">
+        <span>my best frund 💞</span>
+      </figure>
+      <figure class="memory-card" style="--top:75%; --left:84%; --rot:4deg; --delay:-5.5s;">
+        <img src="IMG-20240407-WA0065.jpg" alt="A gentle memory together" loading="lazy">
+        <span>always yours 🌷</span>
+      </figure>
+      <figure class="memory-card" style="--top:84%; --left:44%; --rot:-6deg; --delay:-4.5s;">
+        <img src="436710767_1403791160332512_4087796992214037193_n.jpg" alt="A precious memory together" loading="lazy">
+        <span>my forever baby 🩷</span>
+      </figure>
+      <figure class="memory-card" style="--top:84%; --left:15%; --rot:6deg; --delay:-1.5s;">
+        <img src="20240526_133637.jpg.jpeg" alt="A soft memory together" loading="lazy">
+        <span>love you, cookiee 🍪</span>
+      </figure>
+    </div>
+
+    <canvas id="fogCanvas" class="fog-canvas"></canvas>
+
+    <div class="ambient-layer" aria-hidden="true">
+      <span class="floaty" style="top:8%; left:8%; animation-delay:.2s;">✨</span>
+      <span class="floaty" style="top:20%; left:88%; animation-delay:1.1s;">💫</span>
+      <span class="floaty" style="top:33%; left:30%; animation-delay:.6s;">🌸</span>
+      <span class="floaty" style="top:50%; left:90%; animation-delay:1.6s;">🎀</span>
+      <span class="floaty" style="top:65%; left:14%; animation-delay:.9s;">⭐</span>
+      <span class="floaty" style="top:78%; left:80%; animation-delay:2s;">🩷</span>
+      <span class="floaty" style="top:90%; left:30%; animation-delay:.4s;">🌷</span>
+      <span class="floaty" style="top:5%; left:50%; animation-delay:1.4s;">🎀</span>
+      <span class="floaty" style="top:56%; left:56%; animation-delay:.7s;">✨</span>
+      <span class="floaty" style="top:30%; left:52%; animation-delay:1.9s;">🦋</span>
+      <span class="floaty" style="top:82%; left:66%; animation-delay:1.2s;">💗</span>
+      <span class="floaty" style="top:14%; left:38%; animation-delay:.3s;">🌟</span>
+    </div>
+
+    <div class="hint" id="hint">wipe the mirror, baby 💫</div>
+
+    <button class="icon-btn icon-star" id="iconStar" aria-label="hold me">✨</button>
+    <button class="icon-btn icon-note" id="iconNote" aria-label="open a secret note">💌</button>
+    <button class="icon-btn icon-bird" id="iconBird" aria-label="hold me too">🐦</button>
+
+    <button class="music-btn" id="musicBtn" aria-label="play Noor" aria-pressed="false">♫ play noor</button>
+    <button class="refog-btn" id="refogBtn">🪄 fog it up again</button>
+  </div>
+
+  <audio id="noorAudio" preload="auto" loop>
+    <source src="noor.mp3" type="audio/mpeg">
+  </audio>
+  <script src="noor-data.js"></script>
+
+  <div class="toast" id="toast"></div>
+
+  <div class="finale-overlay" id="finaleOverlay">
+    <div class="finale-card">
+      <div class="finale-emoji">🎀</div>
+      <p class="finale-text">you're sooo caring,<br>sooo baby like 🥺💕</p>
+      <p class="finale-sub">my princess. my best frund.<br>forever my baby.</p>
+      <button class="finale-close" id="finaleClose">close ✕</button>
+    </div>
+  </div>
+
+  <div class="signature">made just for you, cookiee 🤍</div>
+
+<script>
+(function(){
+  const canvas = document.getElementById('fogCanvas');
+  const ctx = canvas.getContext('2d');
+  const stage = document.getElementById('stage');
+  const hint = document.getElementById('hint');
+  const toastEl = document.getElementById('toast');
+  const finaleOverlay = document.getElementById('finaleOverlay');
+  const finaleClose = document.getElementById('finaleClose');
+  const refogBtn = document.getElementById('refogBtn');
+  const iconStar = document.getElementById('iconStar');
+  const iconBird = document.getElementById('iconBird');
+  const iconNote = document.getElementById('iconNote');
+  const musicBtn = document.getElementById('musicBtn');
+  const noorAudio = document.getElementById('noorAudio');
+  const memoryCards = [...document.querySelectorAll('.memory-card')];
+
+  if(window.NOOR_AUDIO_BASE64){
+    noorAudio.src = 'data:audio/mpeg;base64,' + window.NOOR_AUDIO_BASE64;
+    noorAudio.querySelector('source').remove();
+  }
+
+  let dpr = Math.max(1, window.devicePixelRatio || 1);
+  let W, H;
+  let finaleShown = false;
+  let hintDismissed = false;
+
+  function updateMusicButton(){
+    const isPlaying = !noorAudio.paused;
+    musicBtn.textContent = isPlaying ? '♫ pause noor' : '♫ play noor';
+    musicBtn.setAttribute('aria-pressed', String(isPlaying));
+  }
+
+  async function startNoor(showError = false){
+    try{
+      await noorAudio.play();
+      updateMusicButton();
+    } catch(error){
+      updateMusicButton();
+      if(showError){
+        showToast('noor.mp3 could not play 🎶', 'please use a standard MP3 file');
+      }
+    }
+  }
+
+  noorAudio.addEventListener('play', updateMusicButton);
+  noorAudio.addEventListener('pause', updateMusicButton);
+  stage.addEventListener('pointerdown', e => {
+    if(e.target !== musicBtn && noorAudio.paused) startNoor();
+  }, { once:true });
+
+  function sizeCanvas(){
+    W = window.innerWidth; H = window.innerHeight;
+    canvas.width = W * dpr; canvas.height = H * dpr;
+    canvas.style.width = W + 'px'; canvas.style.height = H + 'px';
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    drawFog();
+  }
+
+  function drawFog(){
+    ctx.globalCompositeOperation = 'source-over';
+    ctx.clearRect(0, 0, W, H);
+    const grad = ctx.createLinearGradient(0, 0, W, H);
+    grad.addColorStop(0, '#FCD3E3');
+    grad.addColorStop(.5, '#F6B8D2');
+    grad.addColorStop(1, '#F2A9C6');
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, W, H);
+    for(let i = 0; i < 26; i++){
+      const x = Math.random() * W, y = Math.random() * H, r = 60 + Math.random() * 90;
+      const rg = ctx.createRadialGradient(x, y, 0, x, y, r);
+      rg.addColorStop(0, 'rgba(255,255,255,0.35)');
+      rg.addColorStop(1, 'rgba(255,255,255,0)');
+      ctx.fillStyle = rg;
+      ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fill();
+    }
+    finaleShown = false;
+  }
+
+  window.addEventListener('resize', sizeCanvas);
+  sizeCanvas();
+
+  // ---- wiping ----
+  let isDown = false, last = null, downInfo = null, lastTapTime = 0, lastTapPos = null;
+  let activeCard = null, dragOffsetX = 0, dragOffsetY = 0, didDrag = false;
+
+  function eraseAt(x, y, r = 42){
+    ctx.save();
+    ctx.globalCompositeOperation = 'destination-out';
+    const rg = ctx.createRadialGradient(x, y, 0, x, y, r);
+    rg.addColorStop(0, 'rgba(0,0,0,1)');
+    rg.addColorStop(.7, 'rgba(0,0,0,.9)');
+    rg.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.fillStyle = rg;
+    ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fill();
+    ctx.restore();
+  }
+
+  function eraseLine(x0, y0, x1, y1){
+    const dist = Math.hypot(x1 - x0, y1 - y0);
+    const steps = Math.max(1, Math.floor(dist / 8));
+    for(let i = 0; i <= steps; i++){
+      const t = i / steps;
+      eraseAt(x0 + (x1 - x0) * t, y0 + (y1 - y0) * t);
+    }
+  }
+
+  function dismissHint(){
+    if(!hintDismissed){ hintDismissed = true; hint.classList.add('hidden'); }
+  }
+
+  function revealMemoryAt(x, y){
+    const card = findMemoryAt(x, y);
+    revealMemoryCard(card, x, y);
+  }
+
+  function revealMemoryCard(card, x, y){
+    if(!card) return;
+    if(card.classList.contains('revealed')) return;
+    card.classList.add('revealed');
+    const image = card.querySelector('img');
+    image.style.filter = 'none';
+    image.style.transform = 'scale(1)';
+    spawnHearts(x, y, 6);
+    showToast('a little note for you 💌');
+  }
+
+  function findMemoryAt(x, y){
+    return memoryCards.find(item => {
+      const bounds = item.getBoundingClientRect();
+      return x >= bounds.left && x <= bounds.right && y >= bounds.top && y <= bounds.bottom;
+    });
+  }
+
+  memoryCards.forEach(card => {
+    let pointerStart = null;
+    let cardDragged = false;
+    let offsetX = 0;
+    let offsetY = 0;
+
+    card.addEventListener('pointerdown', e => {
+      e.stopPropagation();
+      card.setPointerCapture(e.pointerId);
+      const bounds = card.getBoundingClientRect();
+      pointerStart = { x:e.clientX, y:e.clientY };
+      offsetX = e.clientX - (bounds.left + bounds.width / 2);
+      offsetY = e.clientY - (bounds.top + bounds.height / 2);
+      cardDragged = false;
+      card.classList.add('dragging');
+      dismissHint();
+    });
+
+    card.addEventListener('pointermove', e => {
+      if(!pointerStart) return;
+      const movement = Math.hypot(e.clientX - pointerStart.x, e.clientY - pointerStart.y);
+      if(movement > 6) cardDragged = true;
+      if(!cardDragged) return;
+      const halfWidth = card.offsetWidth / 2;
+      const halfHeight = card.offsetHeight / 2;
+      const centerX = Math.max(halfWidth, Math.min(W - halfWidth, e.clientX - offsetX));
+      const centerY = Math.max(halfHeight, Math.min(H - halfHeight, e.clientY - offsetY));
+      card.style.left = centerX + 'px';
+      card.style.top = centerY + 'px';
+    });
+
+    card.addEventListener('pointerup', e => {
+      if(!pointerStart) return;
+      if(card.hasPointerCapture(e.pointerId)) card.releasePointerCapture(e.pointerId);
+      card.classList.remove('dragging');
+      if(!cardDragged) revealMemoryCard(card, e.clientX, e.clientY);
+      pointerStart = null;
+    });
+
+    card.addEventListener('pointercancel', e => {
+      if(card.hasPointerCapture(e.pointerId)) card.releasePointerCapture(e.pointerId);
+      card.classList.remove('dragging');
+      pointerStart = null;
+    });
+  });
+
+  canvas.addEventListener('pointerdown', e => {
+    isDown = true;
+    canvas.setPointerCapture(e.pointerId);
+    const p = { x: e.clientX, y: e.clientY, t: Date.now() };
+    downInfo = p; last = p;
+    activeCard = findMemoryAt(p.x, p.y);
+    didDrag = false;
+    if(activeCard){
+      const bounds = activeCard.getBoundingClientRect();
+      dragOffsetX = p.x - (bounds.left + bounds.width / 2);
+      dragOffsetY = p.y - (bounds.top + bounds.height / 2);
+      activeCard.classList.add('dragging');
+    } else {
+      eraseAt(p.x, p.y);
+    }
+    dismissHint();
+  });
+
+  canvas.addEventListener('pointermove', e => {
+    if(!isDown) return;
+    const x = e.clientX, y = e.clientY;
+    if(activeCard){
+      const movement = Math.hypot(x - downInfo.x, y - downInfo.y);
+      if(movement > 6) didDrag = true;
+      if(didDrag){
+        const halfWidth = activeCard.offsetWidth / 2;
+        const halfHeight = activeCard.offsetHeight / 2;
+        const centerX = Math.max(halfWidth, Math.min(W - halfWidth, x - dragOffsetX));
+        const centerY = Math.max(halfHeight, Math.min(H - halfHeight, y - dragOffsetY));
+        activeCard.style.left = centerX + 'px';
+        activeCard.style.top = centerY + 'px';
+      }
+      last = { x, y };
+      return;
+    }
+    if(last){ eraseLine(last.x, last.y, x, y); }
+    last = { x, y };
+  });
+
+  function endStroke(e){
+    if(!isDown) return;
+    isDown = false;
+    if(canvas.hasPointerCapture(e.pointerId)) canvas.releasePointerCapture(e.pointerId);
+    const upX = e.clientX, upY = e.clientY;
+    const wasDraggingCard = Boolean(activeCard && didDrag);
+    if(activeCard){
+      activeCard.classList.remove('dragging');
+      activeCard = null;
+    }
+    const dist = downInfo ? Math.hypot(upX - downInfo.x, upY - downInfo.y) : 999;
+    const dur = downInfo ? Date.now() - downInfo.t : 999;
+    if(!wasDraggingCard && dist < 10 && dur < 300){
+      revealMemoryAt(upX, upY);
+      const now = Date.now();
+      if(lastTapPos && now - lastTapTime < 380 && Math.hypot(upX - lastTapPos.x, upY - lastTapPos.y) < 40){
+        triggerDoubleTap(upX, upY);
+        lastTapTime = 0; lastTapPos = null;
+      } else {
+        lastTapTime = now; lastTapPos = { x: upX, y: upY };
+      }
+    }
+    last = null; downInfo = null;
+    scheduleProgressCheck();
+  }
+  canvas.addEventListener('pointerup', endStroke);
+  canvas.addEventListener('pointercancel', endStroke);
+
+  // ---- progress toward finale ----
+  let progressTimer = null;
+  function scheduleProgressCheck(){
+    clearTimeout(progressTimer);
+    progressTimer = setTimeout(checkProgress, 180);
+  }
+  const sw = 48, sh = 32;
+  const sampleCanvas = document.createElement('canvas');
+  sampleCanvas.width = sw; sampleCanvas.height = sh;
+  const sctx = sampleCanvas.getContext('2d', { willReadFrequently: true });
+
+  function checkProgress(){
+    if(finaleShown) return;
+    sctx.clearRect(0, 0, sw, sh);
+    sctx.drawImage(canvas, 0, 0, sw, sh);
+    const data = sctx.getImageData(0, 0, sw, sh).data;
+    let sum = 0;
+    for(let i = 3; i < data.length; i += 4){ sum += data[i]; }
+    const avgAlpha = sum / (sw * sh);
+    const wipedFraction = 1 - (avgAlpha / 255);
+    if(wipedFraction > 0.78){ showFinale(); }
+  }
+
+  // ---- toast ----
+  let toastTimer = null;
+  function showToast(text, sub){
+    clearTimeout(toastTimer);
+    toastEl.innerHTML = text + (sub ? `<div style="font-family:'Fredoka';font-size:.85rem;margin-top:.3em;opacity:.8;">${sub}</div>` : '');
+    toastEl.style.opacity = '1';
+    toastEl.style.transform = 'translate(-50%,0)';
+    toastTimer = setTimeout(() => {
+      toastEl.style.opacity = '0';
+      toastEl.style.transform = 'translate(-50%,-16px)';
+    }, 3400);
+  }
+
+  // ---- heart burst ----
+  function spawnHearts(x, y, count = 12){
+    const hearts = ['💕','💗','💖','✨','🩷'];
+    for(let i = 0; i < count; i++){
+      const el = document.createElement('div');
+      el.className = 'heart-particle';
+      el.textContent = hearts[Math.floor(Math.random() * hearts.length)];
+      el.style.left = (x - 10) + 'px';
+      el.style.top = (y - 10) + 'px';
+      el.style.setProperty('--dx', (Math.random() * 120 - 60) + 'px');
+      el.style.animationDelay = (Math.random() * .15) + 's';
+      document.body.appendChild(el);
+      setTimeout(() => el.remove(), 1300);
+    }
+  }
+
+  function triggerDoubleTap(x, y){
+    spawnHearts(x, y, 14);
+    showToast('loviiiieee doviiiieee 💕');
+  }
+
+  const secretNotes = [
+    ['tiny reminder 💌', 'you make ordinary days feel special.'],
+    ['psst... 🫂', 'you are my favourite notification.'],
+    ['for my cookiee 🍪', 'one smile from you fixes everything.'],
+    ['promise? 💗', 'I will keep choosing you, every day.']
+  ];
+  let noteIndex = 0;
+
+  iconNote.addEventListener('click', () => {
+    const [title, message] = secretNotes[noteIndex % secretNotes.length];
+    noteIndex++;
+    showToast(title, message);
+    spawnHearts(window.innerWidth * 0.08, window.innerHeight * 0.1, 8);
+  });
+
+  // ---- long-press secrets ----
+  function setupLongPress(el, onFire){
+    let timer = null, fired = false;
+    const start = () => {
+      fired = false;
+      timer = setTimeout(() => {
+        fired = true;
+        onFire();
+        el.classList.add('pressed');
+        setTimeout(() => el.classList.remove('pressed'), 400);
+      }, 650);
+    };
+    const cancel = () => {
+      clearTimeout(timer);
+      if(!fired){
+        el.classList.add('pressed');
+        setTimeout(() => el.classList.remove('pressed'), 400);
+      }
+    };
+    el.addEventListener('pointerdown', start);
+    el.addEventListener('pointerup', cancel);
+    el.addEventListener('pointerleave', cancel);
+  }
+
+  setupLongPress(iconStar, () => showToast('best frund 🫂💛', 'always.'));
+  setupLongPress(iconBird, () => showToast('chutiya lund 😂', 'the day you called me this... and I fell even harder'));
+
+  musicBtn.addEventListener('click', async () => {
+    if(noorAudio.paused){
+      await startNoor(true);
+    } else {
+      noorAudio.pause();
+      updateMusicButton();
+    }
+  });
+
+  // ---- finale ----
+  function showFinale(){
+    finaleShown = true;
+    finaleOverlay.classList.add('show');
+    spawnHearts(window.innerWidth / 2, window.innerHeight * 0.3, 20);
+  }
+  finaleClose.addEventListener('click', () => finaleOverlay.classList.remove('show'));
+
+  // ---- refog ----
+  refogBtn.addEventListener('click', () => {
+    clearTimeout(progressTimer);
+    isDown = false;
+    last = null;
+    downInfo = null;
+    drawFog();
+    finaleOverlay.classList.remove('show');
+    hint.classList.remove('hidden'); hintDismissed = false;
+  });
+})();
+</script>
+</body>
+</html>
